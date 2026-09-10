@@ -30,3 +30,4 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
+// the idea of this task to to prove that the button has bouncing bugs, which means that the program might detect multiple presses despite the button being only pressed once thus causing false accumulations.
