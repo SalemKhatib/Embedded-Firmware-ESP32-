@@ -14,5 +14,10 @@ void button_init(void)
 
 int button_is_pressed(void)
 {
-    return gpio_get_level(BUTTON_PIN) == 0;
+    int first_read = gpio_get_level(BUTTON_PIN);
+     // Wait for mechanical bouncing to settle
+    vTaskDelay(pdMS_TO_TICKS(20));
+    int second_read = gpio_get_level(BUTTON_PIN);
+     // Button is considered pressed only if both readings are LOW
+    return (first_read == 0 && second_read == 0);
 }
