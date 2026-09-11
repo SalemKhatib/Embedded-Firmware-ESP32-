@@ -1,0 +1,51 @@
+#include <stdio.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "button.h"
+#include "buzzer.h"
+
+void app_main(void)
+{
+    button_init();
+    buzzer_init();
+
+    while (1)
+    {
+        /*
+         * Sleep here until the button ISR
+         * sends us a notification.
+         */
+        ulTaskNotifyTake(
+            pdTRUE,
+            portMAX_DELAY
+        );
+
+        /*
+         * We woke up because an interrupt happened.
+         * Now verify/debounce the physical button.
+         */
+        if (button_is_pressed())
+        {
+            printf("Valid button press!\n");
+
+            buzzer_on();
+
+            vTaskDelay(pdMS_TO_TICKS(200));
+
+            buzzer_off();
+
+            button_wait_for_release();
+        }
+
+        /*
+         * Throw away any extra notifications
+         * caused by contact bounce during this press.
+         */
+        ulTaskNotifyTake(
+            pdTRUE,
+            0
+        );
+    }
+}
