@@ -6,26 +6,51 @@
 #include "button.h"
 #include "buzzer.h"
 
+
+/*
+ * [OURS]
+ * A second FreeRTOS task.
+ */
+void background_task(void *arg)
+{
+    while (1)
+    {
+        printf("Background task is running...\n");
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+
 void app_main(void)
 {
     button_init();
     buzzer_init();
 
+    /*
+     * [FreeRTOS]
+     * Create our background task.
+     */
+    xTaskCreate(
+        background_task,
+        "background_task",
+        2048,
+        NULL,
+        1,
+        NULL
+    );
+
     while (1)
     {
         /*
-         * Sleep here until the button ISR
-         * sends us a notification.
+         * app_main task sleeps here
+         * until button ISR wakes it.
          */
         ulTaskNotifyTake(
             pdTRUE,
             portMAX_DELAY
         );
 
-        /*
-         * We woke up because an interrupt happened.
-         * Now verify/debounce the physical button.
-         */
         if (button_is_pressed())
         {
             printf("Valid button press!\n");
@@ -40,8 +65,7 @@ void app_main(void)
         }
 
         /*
-         * Throw away any extra notifications
-         * caused by contact bounce during this press.
+         * Clear possible bounce notifications.
          */
         ulTaskNotifyTake(
             pdTRUE,
