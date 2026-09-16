@@ -1,43 +1,31 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "simp.h"
 #include "oled.h"
 #include "button.h"
 #include "buzzer.h"
 
 
-#define SIMP_MONITOR_WIDTH   256
-#define SIMP_MONITOR_HEIGHT  256
-
-
 /*
  * [OURS]
  *
- * Temporary fake SIMP monitor used while learning the display bridge.
- * The real SIMP processor will eventually write into a monitor array
- * with the same 256 x 256 layout.
- */
-static uint8_t test_monitor[
-    SIMP_MONITOR_WIDTH * SIMP_MONITOR_HEIGHT
-];
-
-
-/*
- * [OURS]
+ * Our second FreeRTOS task.
  *
- * Second FreeRTOS task used to prove that app_main can block while
- * another READY task continues running.
+ * Prints once every second.
  */
 void background_task(void *arg)
 {
     while (1)
     {
         printf("Background task is running...\n");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        vTaskDelay(
+            pdMS_TO_TICKS(1000)
+        );
     }
 }
 
@@ -45,30 +33,49 @@ void background_task(void *arg)
 /*
  * [OURS]
  *
- * Create a simple fake SIMP image: a diagonal line.
+ * The SIMP program currently being tested.
  *
- * Pixel (x, y) in a 1D 256-wide array lives at:
+ * Right now this contains the assembled
+ * machine code for circle.asm.
  *
- *     index = y * 256 + x
- *
- * Here x == y, so the diagonal pixels are:
- * (0,0), (1,1), (2,2), ... (255,255).
+ * Later we can replace the contents with
+ * stairs, triangle, square, etc.
  */
-static void create_test_image(void)
+static const uint32_t simp_test_program[] =
 {
-    memset(
-        test_monitor,
-        0,
-        sizeof(test_monitor)
-    );
+    0x00810040u,   // y = 64
+    0x00D100C0u,   // end_y = 192
+    0x006100FFu,   // white = 255
+    0x00710001u,   // monitor command = 1
 
-    for (int i = 0; i < SIMP_MONITOR_WIDTH; i++)
-    {
-        test_monitor[
-            i * SIMP_MONITOR_WIDTH + i
-        ] = 0xFF;
-    }
-}
+    /*
+     * row_loop:
+     */
+    0x01981040u,   // half_width = y - 64
+    0x01B19080u,   // left  = 128 - half_width
+    0x00C19080u,   // right = 128 + half_width
+    0x07481008u,   // row_base = y << 8
+    0x00AB0000u,   // x = left
+
+    /*
+     * pixel_loop:
+     */
+    0x0054A000u,   // pixel address = row_base + x
+
+    0x15510014u,   // monitoraddr = pixel address
+    0x15610015u,   // monitordata = 255
+    0x15710016u,   // monitorcmd = 1
+
+    0x00A1A001u,   // x++
+
+    0x0E1AC009u,   // if x <= right, go to pixel_loop
+
+    0x00818001u,   // y++
+
+    0x0C18D004u,   // if y < 192, go to row_loop
+
+    0x16000000u    // halt
+};
 
 
 /*
@@ -78,10 +85,17 @@ static void create_test_image(void)
  */
 void app_main(void)
 {
+    /*
+     * Initialize physical hardware.
+     */
     button_init();
     buzzer_init();
     oled_init();
 
+
+    /*
+     * Create our second FreeRTOS task.
+     */
     xTaskCreate(
         background_task,
         "background_task",
@@ -91,41 +105,133 @@ void app_main(void)
         NULL
     );
 
+
     while (1)
     {
         /*
-         * Sleep until the button ISR sends this task a notification.
+         * [FreeRTOS]
+         *
+         * Sleep this task until the
+         * button interrupt wakes us.
          */
         ulTaskNotifyTake(
             pdTRUE,
             portMAX_DELAY
         );
 
+
+        /*
+         * Verify/debounce the button press.
+         */
         if (button_is_pressed())
         {
-            printf("Valid button press! Showing fake SIMP monitor.\n");
+            printf("Valid button press!\n");
+
 
             /*
-             * Stage 1 of the SIMP project:
-             *
-             * fake SIMP monitor
-             *      -> OLED conversion
-             *      -> physical SSD1306
+             * Clear the physical OLED
+             * before starting a new run.
              */
-            create_test_image();
-            oled_show_simp_monitor(test_monitor);
+            oled_clear();
 
+
+            /*
+             * Reset the virtual SIMP machine.
+             *
+             * Clears:
+             *
+             * memory
+             * registers
+             * I/O registers
+             * monitor
+             * PC
+             * halted state
+             */
+            simp_reset();
+
+
+            /*
+             * Copy simp_test_program[]
+             * into the simulated SIMP memory.
+             */
+            simp_load_program(
+                simp_test_program,
+                sizeof(simp_test_program)
+                    / sizeof(simp_test_program[0])
+            );
+
+
+            /*
+             * Run the SIMP processor.
+             *
+             * Stop if:
+             *
+             * 1. SIMP executes HALT
+             *
+             * OR
+             *
+             * 2. We reach 1,000,000 cycles.
+             */
+            int result = simp_run(
+                1000000
+            );
+
+
+            /*
+             * Print the result of the
+             * simulated processor run.
+             */
+            printf(
+                "SIMP result: halted=%d, cycles=%lu\n",
+                result,
+                (unsigned long)simp_get_cycles()
+            );
+
+
+            /*
+             * Get the REAL monitor[]
+             * produced by the SIMP program
+             * and show it on the OLED.
+             */
+            oled_show_simp_monitor(
+                simp_get_monitor()
+            );
+
+
+            /*
+             * Beep when the SIMP program
+             * has finished running.
+             */
             buzzer_on();
-            vTaskDelay(pdMS_TO_TICKS(200));
+
+            vTaskDelay(
+                pdMS_TO_TICKS(200)
+            );
+
             buzzer_off();
 
-            /* Keep the image visible while the button is held. */
+
+            /*
+             * Wait until the physical
+             * button is released.
+             */
             button_wait_for_release();
 
-            oled_clear();
+
+            /*
+             * We DO NOT call oled_clear()
+             * here.
+             *
+             * The resulting SIMP image
+             * stays visible on the OLED.
+             */
         }
 
-        /* Discard notifications caused by switch bounce. */
+
+        /*
+         * Discard any leftover notifications
+         * caused by button bounce.
+         */
         ulTaskNotifyTake(
             pdTRUE,
             0
