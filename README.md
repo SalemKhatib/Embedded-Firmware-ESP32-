@@ -43,3 +43,7 @@ The longer-term goal is that new SIMP assembly programs such as stairs, rectangl
 The basics project shows the progression that led to the SIMP integration work instead of presenting only the final result. It includes the steps from GPIO polling through interrupts, FreeRTOS synchronization, and OLED control.
 
 For the active work, see [`simp_processor_flow/`](simp_processor_flow/).
+
+
+<img width="1280" height="1183" alt="photo_ESP_32" src="https://github.com/user-attachments/assets/066a5108-ad99-455c-b92a-e986994b196d" />
+
