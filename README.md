@@ -445,6 +445,10 @@ For the full integration details, source organization, and hardware demonstratio
 
 <img width="1280" height="1172" alt="photo_5859308275310989042_y" src="https://github.com/user-attachments/assets/1b040db9-8bb1-46e5-a64b-723136f852fd" />
 
+## Monitor Output for the circle assembly code test
+
+<img width="828" height="852" alt="photo_5866180618121580292_y" src="https://github.com/user-attachments/assets/3c30ad01-ccba-45e0-a51d-d66049d74aa9" />
+
 ---
 
 ## Project Status
