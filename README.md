@@ -440,6 +440,8 @@ For the full integration details, source organization, and hardware demonstratio
 ## Hardware Setup
 
 <img width="900" alt="ESP32 hardware setup" src="https://github.com/user-attachments/assets/066a5108-ad99-455c-b92a-e986994b196d" />
+## Monitor Output for the triangle assembly code test
+<img width="1280" height="1172" alt="photo_5859308275310989042_y" src="https://github.com/user-attachments/assets/1b040db9-8bb1-46e5-a64b-723136f852fd" />
 
 ---
 
