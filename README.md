@@ -1,48 +1,76 @@
-# Embedded Firmware ESP32
+# ESP32 Embedded Firmware & Custom CPU Integration
 
-This repository documents two connected parts of my ESP32 firmware learning work:
+ESP32 firmware project combining incremental embedded-systems exercises with a working integration of a **custom SIMP processor simulator**, **FreeRTOS**, GPIO interrupts, an SSD1306 OLED, and a buzzer.
 
-1. **`learning_basics/`** - the incremental exercises used to learn GPIO, button debouncing, interrupts, FreeRTOS task notifications, a buzzer, I2C, and SSD1306 OLED control.
-2. **`simp_processor_flow/`** - the active integration project: reuse a SIMP CPU simulator written in C and eventually display SIMP graphics programs on a physical OLED connected to the ESP32.
+The repository documents the progression from basic ESP32 peripheral control to executing **SIMP machine-code programs on the ESP32** and displaying their generated graphics on real hardware.
 
-## Repository Layout
+---
+
+## Project Overview
+
+This repository contains two connected parts:
+
+### `learning_basics/`
+
+Incremental exercises used to learn and understand:
+
+- ESP32 GPIO
+- Push-button polling
+- Button debouncing
+- GPIO interrupts
+- FreeRTOS tasks
+- FreeRTOS task notifications
+- ISR-to-task synchronization
+- Active buzzer control
+- I2C
+- SSD1306 OLED control
+- Framebuffer manipulation
+
+### `simp_processor_flow/`
+
+The main integration project.
+
+A previously developed **SIMP CPU simulator written in C** was adapted to run on the ESP32 and connected to physical peripherals.
+
+The complete flow is now working:
 
 ```text
-Embedded-Firmware-ESP32/
-|
-|-- learning_basics/
-|   `-- original incremental ESP32 learning project
-|
-`-- simp_processor_flow/
-    |-- main/
-    |-- components/
-    |-- docs/
-    `-- reference/
-```
-
-## Current SIMP Project Status
-
-The processor is not connected yet. The current active milestone is deliberately smaller:
-
-```text
-fake 256 x 256 SIMP monitor
-        |
-        v
-OLED conversion code
-        |
-        v
-physical 128 x 64 SSD1306
-```
-
-Once that bridge is understood and tested, the stripped SIMP CPU core will be integrated so that the original `circle` program can generate the virtual monitor contents itself.
-
-The longer-term goal is that new SIMP assembly programs such as stairs, rectangles, or triangles can run through the same processor and display path without shape-specific ESP32 code.
-
-## Why Keep the Basics Folder?
-
-The basics project shows the progression that led to the SIMP integration work instead of presenting only the final result. It includes the steps from GPIO polling through interrupts, FreeRTOS synchronization, and OLED control.
-
-For the active work, see [`simp_processor_flow/`](simp_processor_flow/).
+Physical Button
+      |
+      v
+GPIO Interrupt
+      |
+      v
+FreeRTOS Task Notification
+      |
+      v
+Load SIMP Machine Code
+      |
+      v
+Custom SIMP CPU
+Fetch -> Decode -> Execute
+      |
+      v
+SIMP Monitor I/O Registers
+      |
+      v
+Virtual 256 x 256 Monitor
+      |
+      v
+Framebuffer Conversion
+4 x 4 SIMP pixels -> 1 OLED pixel
+      |
+      v
+64 x 64 Image
+      |
+      v
+Centered on 128 x 64 SSD1306
+      |
+      v
+Physical OLED Display
+      |
+      v
+Buzzer Notification
 
 
 <img width="1280" height="1183" alt="photo_ESP_32" src="https://github.com/user-attachments/assets/066a5108-ad99-455c-b92a-e986994b196d" />
