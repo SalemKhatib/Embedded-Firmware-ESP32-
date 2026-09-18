@@ -73,5 +73,5 @@ Physical OLED Display
 Buzzer Notification
 
 
-<img width="1280" height="1183" alt="photo_ESP_32" src="https://github.com/user-attachments/assets/066a5108-ad99-455c-b92a-e986994b196d" />
+<img width="1280" height="1172" alt="photo_5859308275310989042_y" src="https://github.com/user-attachments/assets/2e0e6353-7be2-4e4e-b955-5f3c9a568ca7" />
 
